@@ -32,6 +32,18 @@ source-repository head
   location: https://github.com/sboosali/google-cloud-speech
 
 
+executable example-google-cloud-speech
+ hs-source-dirs:      executables
+ main-is:             Main.hs
+
+ default-language:    Haskell2010
+ ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+ build-depends:
+    base
+  , google-cloud-speech
+
+
 library
  hs-source-dirs:      sources
  default-language:    Haskell2010
@@ -52,109 +64,38 @@ library
                      ScopedTypeVariables StandaloneDeriving
 
  exposed-modules:
-  GoogleCloudSpeech
-  GoogleCloudSpeech.Types
-
+                 GoogleCloudSpeech
+                 GoogleCloudSpeech.Types
+                 GoogleCloudSpeech.Request
+                 GoogleCloudSpeech.Microphone
 -- other-modules:
-  GoogleCloudSpeech.Extra
-  GoogleCloudSpeech.Example
+                 GoogleCloudSpeech.Extra
+                 GoogleCloudSpeech.Example
 
  build-depends:
-    base >=4.7 && <5
+               base >=4.7 && <5
 
-  -- ,
-  -- , transformers
-  -- , mtl
-  -- , containers
-  -- , bytestring
-  -- , stm
-  -- , template-haskell
+             , bytestring
+             , text
+             , containers
+             , unordered-containers
 
-  , deepseq
-  , hashable
-  , semigroups
-  -- ,
-  -- , lens
-  -- , exceptions
-  -- , free
-  -- , bifunctors
-  -- , profunctors
-  -- , either
-  -- , pipes
-  -- , formatting
-  -- , servant
-  -- , Earley
-  -- , split
-  -- , interpolatedstring-perl6
-  -- , wl-pprint-text
-  -- , text
-  -- , aeson
-  -- , hashable
-  -- , unordered-containers
-  -- , async
-  -- , parallel
+             , stm
+             , filepath
 
+             , deepseq
+             , hashable
+             , semigroups
 
-executable example-google-cloud-speech
- hs-source-dirs:      executables
- main-is:             Main.hs
+             , lens
+             , exceptions
+             , pipes
+             , interpolatedstring-perl6
+             , async
+             , parallel
 
- default-language:    Haskell2010
- ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
-
- build-depends:
-    base
-  , google-cloud-speech
-
-
--- $ stack test doctest
-test-suite doctest
- hs-source-dirs:      tests
- main-is:             DocTest.hs
- type:                exitcode-stdio-1.0
-
- default-language:    Haskell2010
- ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
-
- build-depends:
-    base
-  , google-cloud-speech
-  , doctest
-
-
--- $ stack test unittest
-test-suite unittest
- hs-source-dirs:      tests
- main-is:             UnitTest.hs
- type:                exitcode-stdio-1.0
-
- default-language:    Haskell2010
- ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
-
- other-modules:
-  GoogleCloudSpeech.Test
-
- build-depends:
-    base
-  , google-cloud-speech
-  , hspec ==2.2.*
-  , QuickCheck ==2.8.*
-  -- , tasty
-  -- , tasty-quickcheck
-
-
--- $ stack bench
-benchmark command
- hs-source-dirs:      benchmarks
- main-is:             Bench.hs
- type:                exitcode-stdio-1.0
-
- default-language: Haskell2010
- ghc-options:      -Wall -threaded -rtsopts -with-rtsopts=-N
-
- build-depends:
-    base
-  , google-cloud-speech
-  , criterion
-  , deepseq
-
+             , wreq
+             , lens-aeson
+             , aeson
+             , base64-bytestring             
+             , portaudio
