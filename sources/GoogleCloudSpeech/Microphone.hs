@@ -76,6 +76,7 @@ import qualified Data.Sequence as Seq
 import Data.Foldable (Foldable(..))
 import Prelude hiding (FilePath)
 import qualified Prelude
+import Filesystem.Path.CurrentOS (replaceExtension)
 
 --------------------------------------------------------------------------------
 
@@ -93,11 +94,14 @@ mkContinuousAudioFile i = audioDir </> name
 
 main :: IO ()
 main = do
-  rmtree audioDir
   vAudio <- newTVarIO Seq.empty
 
   runOnUserInterrupt audioFile vAudio $ do
-    main' vAudio
+      main' vAudio
+
+  waitUntilUserPressesReturn
+
+  finalizeAudio audioFile vAudio
 
 main' vAudio = do
   stream <- initPortAudio sFramesPerBuffer
@@ -116,7 +120,7 @@ main' vAudio = do
 
   _ <- forkIO $ saveAudioContinuously vAudio 1
 
-  waitUntilUserPressesReturn
+  return ()
 
   where
   sFramesPerBuffer = 0x800
@@ -124,10 +128,27 @@ main' vAudio = do
 runOnUserInterrupt file vAudio io = io `finally` finalizeAudio file vAudio
 
 finalizeAudio :: _ -> _ -> IO ()
-finalizeAudio file vAudio = do
- saveAudio file vAudio
+finalizeAudio fileRaw vAudio = do
+ saveAudio fileRaw vAudio
  pwd' <- pwd
- mv file (pwd' </> audioFilename)
+ let fileRaw' = pwd' </> audioFilename
+ mv fileRaw fileRaw'
+ -- rmtree audioDir
+ raw2flac fileRaw' >>= print
+
+raw2flac :: FilePath -> IO ExitCode
+raw2flac fileRaw = proc "flac"
+   [ "--channels"    , "1"       --TODO config
+   , "--sample-rate" , "1600" --TODO config
+   , "--endian"      , "little"
+   , "--sign"        , "signed"      --TODO config
+   , "--bps"         , "8"            --TODO config
+   , "-f", "-o"          , fp2t fileFlac
+   , "--force-raw-format", fp2t fileRaw
+   ]
+   empty
+ where
+ fileFlac = fileRaw `replaceExtension` "flac"
 
 waitUntilUserPressesReturn = getLine >> return ()
 
@@ -137,7 +158,7 @@ pause = threadDelay . (*1000)
 
 saveAudioContinuously vAudio i = do
     -- removeFile (mkContinuousAudioFile i) -- lol why even param
-    rm (mkContinuousAudioFile (i-1))
+    -- rm (mkContinuousAudioFile (i-1))
     () <- saveAudio (mkContinuousAudioFile i) vAudio -- match makes blocking, cf lazy-IO? lol maybe.
     pause 30
     saveAudioContinuously vAudio (1+(i::Int))
@@ -194,7 +215,10 @@ saveAudio file vAudio = do
   -- short2words = undefined
 
 fp2s :: FilePath -> Prelude.FilePath
-fp2s = format fp >>> toS
+fp2s = fp2t >>> toS
+
+fp2t :: FilePath -> Text
+fp2t = format fp
 
 {-|
 

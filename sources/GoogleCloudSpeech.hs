@@ -39,12 +39,12 @@ LINEAR16, uncompressed 16-bit signed little-endian samples, is the simplest enco
 
 -}
 module GoogleCloudSpeech
- ( module GoogleCloudSpeech
- , module GoogleCloudSpeech.Types
+ ( module GoogleCloudSpeech.Types
  , module GoogleCloudSpeech.Request
  , module GoogleCloudSpeech.Microphone
+-- , module GoogleCloudSpeech
  ) where
-import GoogleCloudSpeech.Extra
+-- import GoogleCloudSpeech.Extra
 import GoogleCloudSpeech.Types
 import GoogleCloudSpeech.Request    hiding (main)
 import GoogleCloudSpeech.Microphone hiding (main)

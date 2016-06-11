@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-} -- to test inference
 
 module GoogleCloudSpeech.Example where
-import GoogleCloudSpeech
+import GoogleCloudSpeech()
 import qualified GoogleCloudSpeech.Request
 import qualified GoogleCloudSpeech.Microphone
 
@@ -20,5 +20,5 @@ main = do
  getArgs >>= \case
   ["transcribe"] -> GoogleCloudSpeech.Request.main
   ["listen"]     -> GoogleCloudSpeech.Microphone.main
-  _              -> GoogleCloudSpeech.Microphone.main
-
+  []             -> GoogleCloudSpeech.Microphone.main
+  _              -> print "(transcribe | listen)"

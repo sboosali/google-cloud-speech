@@ -32,8 +32,8 @@ import System.IO (openBinaryFile,IOMode(..))
 
 default(Integer)
 
--- flacFile = "final.flac"
-flacFile = "audio.flac"
+flacFile = "final.flac"
+-- flacFile = "audio.flac"
 
 main = do
   apikey <- getEnv "apikey"                     -- secret
@@ -137,6 +137,7 @@ e.g.
 transcribeFLACGoogleSpeech :: APIKey -> FilePath -> IO [Text]
 transcribeFLACGoogleSpeech apikey file = do
   r <- postGoogleSpeechFLAC apikey file
+  print r --TODO
   let ts = r ^.. responseBody . _JSON . gTranscripts
   return ts
 
