@@ -79,6 +79,8 @@ library
              , text
              , containers
              , unordered-containers
+             , template-haskell
+               
 
              , stm
              , filepath
@@ -99,3 +101,5 @@ library
              , aeson
              , base64-bytestring             
              , portaudio
+             , aeson-qq
+               

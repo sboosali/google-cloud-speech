@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings, OverloadedLists, ExtendedDefaultRules, NoMonomorphismRestriction, RecordWildCards, FlexibleContexts #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-type-defaults #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
@@ -6,6 +7,7 @@
 
 -}
 module GoogleCloudSpeech.Request where
+import GoogleCloudSpeech.Extra
 import GoogleCloudSpeech.Types
 
 import Network.Wreq
@@ -30,14 +32,15 @@ import System.IO (openBinaryFile,IOMode(..))
 
 default(Integer)
 
-flacFile = "final.flac" -- "audio.flac"
+-- flacFile = "final.flac"
+flacFile = "audio.flac"
 
 main = do
   apikey <- getEnv "apikey"                     -- secret
   print apikey
 
-  -- rJSON <- postGoogleSpeechJSON apikey "audio.json"
-  -- traverse_ B.putStrLn $ rJSON ^? responseBody
+  -- rFile <- postGoogleSpeechFile apikey "audio.json"
+  -- traverse_ B.putStrLn $ rFile ^? responseBody
 
   -- rBase64 <- postGoogleSpeechBase64 apikey "audio.base64"
   -- traverse_ BL8.putStrLn $ rBase64 ^? responseBody
@@ -143,11 +146,11 @@ e.g.
 transcribeFLACGoogleSpeech :: APIKey -> FilePath -> IO [Text]
 transcribeFLACGoogleSpeech apikey file = do
   r <- postGoogleSpeechFLAC apikey file
-  let ts = r ^.. responseBody . _JSON . transcripts
+  let ts = r ^.. responseBody . _JSON . gTranscripts
   return ts
 
-transcripts :: Traversal' Value Text
-transcripts
+gTranscripts :: Traversal' Value Text
+gTranscripts
   = key"responses"
   . _Array . each
   . key"results" --TODO filter by key"isFinal"
@@ -200,11 +203,11 @@ and
 @
 
 -}
-postGoogleSpeechJSON :: APIKey -> FilePath -> IO (Response ByteString)
-postGoogleSpeechJSON apikey file = do
-  audio <- BL8.readFile file
-  r <- postWith optionsGoogleSpeech (urlGoogleSpeech <> apikey) audio
-  return r
+-- postGoogleSpeechFile :: APIKey -> FilePath -> IO (Response ByteString)
+-- postGoogleSpeechFile apikey file = do
+--   audio <- BL8.readFile file
+--   r <- postGoogleSpeech audio
+--   return r
 
 {-
 
@@ -216,10 +219,8 @@ postGoogleSpeechBase64 apikey file = do
   h <- openBinaryFile file ReadMode
   _audio <- BS.hGetLine h                      -- base64 file has a final newline we must strip
   let gAudio = T.decodeUtf8 _audio
-  let _json = request GoogleSpeechRequest{..}
-  let _body = encode _json
-  -- BL8.putStrLn _body
-  r <- postWith optionsGoogleSpeech (urlGoogleSpeech <> apikey) _body
+  let gRequest = GoogleSpeechRequest{..}
+  r <- postGoogleSpeechJSON apikey gRequest
   return r
 
   -- json stores text, even though we're reading bytestring and decoding back into bytestring
@@ -236,16 +237,22 @@ postGoogleSpeechFLAC apikey file = do
   let _base64 = B64.encode _flac
   -- BS8.putStrLn _base64
   let gAudio = T.decodeUtf8 _base64
-  let _json = request GoogleSpeechRequest{..}
-  let _body = encode _json
-  -- BL8.putStrLn _body
-  r <- postWith optionsGoogleSpeech (urlGoogleSpeech <> apikey) _body
+  let gRequest = GoogleSpeechRequest{..}
+  r <- postGoogleSpeechJSON apikey gRequest
   return r
 
-optionsGoogleSpeech = defaults
+postGoogleSpeechJSON :: APIKey -> GoogleSpeechRequest -> IO (Response ByteString)
+postGoogleSpeechJSON apikey gRequest = postWith gOptions (gUrl <> apikey) body
+ where
+ body = (encode . gJSON) gRequest
+  -- BL8.putStrLn _body
+
+gOptions :: Options
+gOptions = defaults
   & header "Content-Type" .~ ["application/json"]
 
-urlGoogleSpeech = "https://speech.googleapis.com/v1/speech:recognize?key="
+gUrl :: String
+gUrl = "https://speech.googleapis.com/v1/speech:recognize?key="
 
 {-|
 
@@ -264,14 +271,25 @@ e.g.
 @
 
 -}
-request :: GoogleSpeechRequest -> Value
-request GoogleSpeechRequest{..} = Object
-  [ "initialRequest"-: Object
-    [ "encoding"  -: String "FLAC"
-    , "sampleRate"-: Number 16000
-    ]
-  , "audioRequest"-: Object
-    [ "content"-: String gAudio
-    ]
-  ]
+gJSON :: GoogleSpeechRequest -> Value
+gJSON GoogleSpeechRequest{..} = [dict|
+{
+  "initialRequest": {
+    "encoding":"FLAC",
+    "sampleRate":16000
+  },
+  "audioRequest": {
+    "content": #{gAudio}
+  }
+}
+|]
 
+ -- Object
+ --  [ "initialRequest"-: Object
+ --    [ "encoding"  -: String "FLAC"
+ --    , "sampleRate"-: Number 16000
+ --    ]
+ --  , "audioRequest"-: Object
+ --    [ "content"-: String gAudio
+ --    ]
+ --  ]
