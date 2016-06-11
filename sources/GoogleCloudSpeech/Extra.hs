@@ -6,9 +6,11 @@ module GoogleCloudSpeech.Extra
 import Control.DeepSeq as X (NFData)
 import Data.Hashable as X (Hashable)
 import Data.Semigroup as X (Semigroup)
+import Data.String.Conv as X
 
 import GHC.Generics as X (Generic)
 import Data.Data as X (Data)
+import Data.Monoid as X ((<>))
 
 import Control.Arrow as X ((>>>))
 import Data.Function as X ((&))
@@ -20,6 +22,9 @@ import Language.Haskell.TH.Quote (QuasiQuoter)
 import Data.Aeson.QQ
 
 --------------------------------------------------------------------------------
+
+(-:) :: forall a b. a -> b -> (a, b)
+(-:) = (,)
 
 nothing :: (Monad m) => m ()
 nothing = return ()
@@ -44,3 +49,5 @@ dict = 'aesonQQ'
 -}
 dict :: QuasiQuoter
 dict = aesonQQ
+
+--------------------------------------------------------------------------------

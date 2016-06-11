@@ -80,7 +80,7 @@ library
              , containers
              , unordered-containers
              , template-haskell
-               
+
 
              , stm
              , filepath
@@ -102,4 +102,7 @@ library
              , base64-bytestring             
              , portaudio
              , aeson-qq
+             , turtle
+             , system-filepath
+             , string-conv
                

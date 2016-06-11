@@ -109,15 +109,6 @@ So to get around this, people encode the binary data into characters. Base64 is 
 
 --------------------------------------------------------------------------------
 
-type APIKey = String
-
-data GoogleSpeechRequest = GoogleSpeechRequest
- { gAudio :: Text -- ByteString
- }
-
-(-:) = (,)
-
-
 {-|
 
 e.g.

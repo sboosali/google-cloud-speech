@@ -1,3 +1,9 @@
+# project
+_audio/
+*.raw
+*.flac
+*.base64
+
 # my
 ignore/
 notes

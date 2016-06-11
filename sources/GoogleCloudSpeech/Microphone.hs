@@ -1,5 +1,5 @@
-{-# LANGUAGE RecordWildCards, NamedFieldPuns, ScopedTypeVariables #-}
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# LANGUAGE NoMonomorphismRestriction, OverloadedStrings, RecordWildCards, NamedFieldPuns, ScopedTypeVariables, PartialTypeSignatures #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-partial-type-signatures #-} -- only for type-level holes, lol
 
 {-|
 
@@ -58,37 +58,45 @@ RAW Audio format or just RAW Audio is an audio file format for storing uncompres
 -}
 module GoogleCloudSpeech.Microphone where
 import GoogleCloudSpeech.Types
+import GoogleCloudSpeech.Extra
 
 import Sound.PortAudio
 import Sound.PortAudio.Base
 import qualified Data.ByteString.Lazy as BL
+import Turtle
 
-import Control.Monad (forever)
 import Data.Int (Int8) -- (Int16): with Int16, readStream/writeStream always succeed
 import Data.Word (Word8)
-import Data.Monoid ((<>))
 import Foreign (ForeignPtr,mallocForeignPtrArray,withForeignPtr,peekArray)
-import Control.Arrow ((>>>))
 import Control.Concurrent.STM
 import Control.Concurrent (forkIO,threadDelay)
 import System.IO (openBinaryFile,IOMode(..),hClose)
 import Control.Exception (finally)
-import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Data.Foldable (Foldable(..))
-import System.FilePath ((</>))
+import Prelude hiding (FilePath)
+import qualified Prelude
 
 --------------------------------------------------------------------------------
 
-finalAudioFile = audioDir </> "final.raw"
-mkContinuousAudioFile i = audioDir </> ("continuous."++(show (i::Int))++".raw")
-audioDir = "audio"
+audioFilename = "final.raw"
+
+audioDir = "_audio"
+audioFile = audioDir </> audioFilename
+
+outputDir = "data"
+outputFile = outputDir </> audioFilename
+
+mkContinuousAudioFile i = audioDir </> name
+  where
+  name = (fromString $ "chunk." <> (show $ (i::Int)) <> ".raw")
 
 main :: IO ()
 main = do
+  rmtree audioDir
   vAudio <- newTVarIO Seq.empty
 
-  saveOnUserInterrupt finalAudioFile vAudio $ do
+  runOnUserInterrupt audioFile vAudio $ do
     main' vAudio
 
 main' vAudio = do
@@ -108,29 +116,33 @@ main' vAudio = do
 
   _ <- forkIO $ saveAudioContinuously vAudio 1
 
-  busyWait
+  waitUntilUserPressesReturn
 
   where
   sFramesPerBuffer = 0x800
 
-saveOnUserInterrupt file vAudio io = io `finally` saveAudio file vAudio
+runOnUserInterrupt file vAudio io = io `finally` finalizeAudio file vAudio
 
-busyWait = forever $ wait 30
+finalizeAudio :: _ -> _ -> IO ()
+finalizeAudio file vAudio = do
+ saveAudio file vAudio
+ pwd' <- pwd
+ mv file (pwd' </> audioFilename)
 
-wait = threadDelay . (*1000)
+waitUntilUserPressesReturn = getLine >> return ()
+
+busyWait = forever $ pause 30
+
+pause = threadDelay . (*1000)
 
 saveAudioContinuously vAudio i = do
     -- removeFile (mkContinuousAudioFile i) -- lol why even param
+    rm (mkContinuousAudioFile (i-1))
     () <- saveAudio (mkContinuousAudioFile i) vAudio -- match makes blocking, cf lazy-IO? lol maybe.
-    wait 30
+    pause 30
     saveAudioContinuously vAudio (1+(i::Int))
 
 --------------------------------------------------------------------------------
-
--- | bits-per-sample
-type BPS = Int8 -- Int16 -- Word8
-
-type PCM = Seq BPS
 
 {-
 
@@ -157,7 +169,12 @@ saveAudio file vAudio = do
   audio_shorts <- atomically $ readTVar vAudio
   let audio_bytes = convert . toList $ audio_shorts
 
-  h <- openBinaryFile file WriteMode
+  -- for idempotency
+  mktree audioDir
+  touch file
+
+  let _file = fp2s file
+  h <- openBinaryFile _file WriteMode
   () <- BL.hPut h audio_bytes
   hClose h
 
@@ -175,6 +192,9 @@ saveAudio file vAudio = do
   -- -- little-endian
   -- short2words :: Int16 -> (Word8,Word8)
   -- short2words = undefined
+
+fp2s :: FilePath -> Prelude.FilePath
+fp2s = format fp >>> toS
 
 {-|
 
