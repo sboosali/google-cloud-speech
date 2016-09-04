@@ -32,8 +32,9 @@ import System.IO (openBinaryFile,IOMode(..))
 
 default(Integer)
 
-flacFile = "final.flac"
+-- kFLACflacFile = "final.flac"
 -- flacFile = "audio.flac"
+flacFile = "microphone.l16"
 
 main = do
   apikey <- getEnv "apikey"                     -- secret
@@ -267,7 +268,7 @@ gJSON :: GoogleSpeechRequest -> Value
 gJSON GoogleSpeechRequest{..} = [dict|
 {
   "initialRequest": {
-    "encoding":"FLAC",
+    "encoding":"LINEAR16",
     "sampleRate":16000
   },
   "audioRequest": {
@@ -275,6 +276,8 @@ gJSON GoogleSpeechRequest{..} = [dict|
   }
 }
 |]
+
+-- FLAC
 
  -- Object
  --  [ "initialRequest"-: Object
